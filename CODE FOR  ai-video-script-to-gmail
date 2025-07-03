@@ -1,0 +1,137 @@
+{
+  "name": "prompt for given topic gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "YOUR_TRIGGER_ID",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "YOUR_ASSIGNMENT_ID_1",
+              "name": "topic",
+              "value": "today top ai news",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "id": "YOUR_NODE_ID_1",
+      "name": "TOPIC"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENROUTER_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=  {\n  \"model\": \"mistralai/mistral-7b-instruct\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a video scriptwriter.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write a short, engaging 60-second video script about: {{$json['topic']}}\"\n    }\n  ]\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "id": "YOUR_NODE_ID_2",
+      "name": "SCRIPT"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "YOUR_ASSIGNMENT_ID_2",
+              "name": "prompt",
+              "value": "= {{$json[\"body\"][\"choices\"][0][\"message\"][\"content\"].replace(/\\n/g, \" \")}}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [660, 0],
+      "id": "YOUR_NODE_ID_3",
+      "name": "EDIT SCRIPT"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL@gmail.com",
+        "subject": "AI TOPIC SCRIPT",
+        "message": "={{$json[\"prompt\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [880, 0],
+      "id": "YOUR_NODE_ID_4",
+      "name": "SENDING SCRIPT",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{"node": "TOPIC", "type": "main", "index": 0}]]
+    },
+    "TOPIC": {
+      "main": [[{"node": "SCRIPT", "type": "main", "index": 0}]]
+    },
+    "SCRIPT": {
+      "main": [[{"node": "EDIT SCRIPT", "type": "main", "index": 0}]]
+    },
+    "EDIT SCRIPT": {
+      "main": [[{"node": "SENDING SCRIPT", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
